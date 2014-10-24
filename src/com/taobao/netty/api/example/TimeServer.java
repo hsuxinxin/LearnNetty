@@ -23,7 +23,7 @@ public class TimeServer {
 			.childHandler(new ChildChannelHandler());
 			
 			ChannelFuture f = b.bind(port).sync();
-			
+			System.out.println("bind success");
 			f.channel().closeFuture().sync();
 		}catch(Exception e){
 			bossGroup.shutdownGracefully();
