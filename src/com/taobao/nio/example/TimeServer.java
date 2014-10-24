@@ -1,4 +1,4 @@
-package com.taobao.netty.nio.example;
+package com.taobao.nio.example;
 
 public class TimeServer {
 
