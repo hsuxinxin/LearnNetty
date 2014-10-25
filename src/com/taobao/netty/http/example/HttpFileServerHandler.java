@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.regex.Pattern;
 
 import javax.activation.MimetypesFileTypeMap;
@@ -59,7 +61,7 @@ public class HttpFileServerHandler extends SimpleChannelInboundHandler<FullHttpR
 		}
 		if(file.isDirectory()){
 			if(uri.endsWith("/")){
-				sendListing(ctx,file);
+				sendListing(ctx,file,request);
 			}else{
 				sendRedirect(ctx,uri+"/");
 			}
@@ -69,8 +71,11 @@ public class HttpFileServerHandler extends SimpleChannelInboundHandler<FullHttpR
 			sendError(ctx, HttpResponseStatus.FORBIDDEN);
 			return;
 		}
-		sendFile(ctx, file, request);
-		
+		if(uri.endsWith("html")){
+			sendHtml(ctx, file, request);
+			return;
+		}
+		sendFile(ctx, file, request);		
 	}
 	
 	
@@ -117,7 +122,7 @@ public class HttpFileServerHandler extends SimpleChannelInboundHandler<FullHttpR
 		}
 	}
 
-	private void sendListing(ChannelHandlerContext ctx, File dir) {
+	private void sendListing(ChannelHandlerContext ctx, File dir,  FullHttpRequest request) {
 		FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,HttpResponseStatus.OK);
 		response.headers().set(Names.CONTENT_TYPE,"text/html;charset=UTF-8");
 		StringBuilder buf = new StringBuilder();
@@ -143,10 +148,42 @@ public class HttpFileServerHandler extends SimpleChannelInboundHandler<FullHttpR
 			buf.append("</a></li>\r\n");
 		}
 		buf.append("</ul></body></html>");
+		HttpHeaders.setContentLength(response, buf.length());
 		ByteBuf buffer = Unpooled.copiedBuffer(buf,CharsetUtil.UTF_8);
 		response.content().writeBytes(buffer);
 		buffer.release();
-		ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+		ChannelFuture lastContentFuture = ctx.writeAndFlush(response);
+//		ChannelFuture lastContentFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+		if(!HttpHeaders.isKeepAlive(request)){
+			lastContentFuture.addListener(ChannelFutureListener.CLOSE);
+		}
+	}
+	
+	private void sendHtml(ChannelHandlerContext ctx, File file,  FullHttpRequest request) throws IOException {
+		FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,HttpResponseStatus.OK);
+		response.headers().set(Names.CONTENT_TYPE,"text/html;charset=ISO_8859_1");
+		StringBuilder buf = new StringBuilder();
+		RandomAccessFile aFile = new RandomAccessFile(file, "rw");
+		FileChannel inChannel = aFile.getChannel();
+		ByteBuffer temBuffer = ByteBuffer.allocate(1024);
+		while(inChannel.read(temBuffer) != -1){			
+			temBuffer.flip();
+			byte[] bytes = new byte[temBuffer.remaining()];
+			temBuffer.get(bytes);
+			String body = new String(bytes, "ISO_8859_1");
+			buf.append(body);
+			temBuffer.clear();
+		}
+		HttpHeaders.setContentLength(response, buf.length());
+		ByteBuf buffer = Unpooled.copiedBuffer(buf,CharsetUtil.ISO_8859_1);
+		response.content().writeBytes(buffer);
+		buffer.release();
+		ChannelFuture lastContentFuture = ctx.writeAndFlush(response);
+//		ChannelFuture lastContentFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+		if(!HttpHeaders.isKeepAlive(request)){
+			lastContentFuture.addListener(ChannelFutureListener.CLOSE);
+		}
+
 	}
 	
 	private void sendRedirect(ChannelHandlerContext ctx, String newUri) {
