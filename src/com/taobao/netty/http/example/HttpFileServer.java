@@ -13,10 +13,12 @@ import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.stream.ChunkedWriteHandler;
 
 public class HttpFileServer {
-	private static final String DEFAULT_URL = "";
+	private static final String DEFAULT_URL = "/src/com/taobao";
 	
-	public static void main(String[] args) {
-
+	public static void main(String[] args) throws Exception {
+		int port = 80;
+		String url = DEFAULT_URL;
+		new HttpFileServer().run(port, url);
 	}
 	
 	public void run(final int port, final String url) throws Exception{

@@ -62,6 +62,13 @@ public class TimeClientHandle implements Runnable{
 				System.exit(1);
 			}
 		}
+		try {
+			System.out.println("close client");
+			socketChannel.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	private void handleInput(SelectionKey key) throws IOException{

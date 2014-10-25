@@ -94,7 +94,7 @@ public class MultiplexerTimeServer implements Runnable{
 					doWrite(sc, currentTime);
 				}else if (readBytes < 0){
 					//对应链路关闭
-					System.out.println("MultiplexerTimeServer 对应链路关闭");
+    					System.out.println("MultiplexerTimeServer 对应链路关闭");
 					key.cancel();
 					sc.close();
 				}else{
