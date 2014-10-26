@@ -10,6 +10,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.ReadTimeoutHandler;
 
 public class WebSocketServer {
 	public static void main(String[] args) throws Exception{
@@ -36,6 +37,8 @@ public class WebSocketServer {
 									new ChunkedWriteHandler());
 							ch.pipeline().addLast("handler",
 									new WebSocketServerHandler());
+							//…Ë÷√≥¨ ±
+							ch.pipeline().addLast(new ReadTimeoutHandler(30));
 						}
 					});
 			Channel ch = b.bind(port).sync().channel();
